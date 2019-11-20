@@ -5,6 +5,8 @@ PREFIX="/vagrant/build/"
 PLEX="${PREFIX}plexmediaserver"
 VERSION_FILE="${PREFIX}version.json"
 
+mkdir -p "$PREFIX"
+
 if [ ! -f $VERSION_FILE ] || [[ $(find "$VERSION_FILE" -mtime +7 -print) ]]; then
   echo "Fetching latest version data."
   rm -f "$VERSION_FILE"
