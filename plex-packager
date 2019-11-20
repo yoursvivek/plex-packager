@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -e -o pipefail
+
+PREFIX="/vagrant/build/"
+PLEX="${PREFIX}plexmediaserver"
+VERSION_FILE="${PREFIX}version.json"
+
+if [ ! -f $VERSION_FILE ] || [[ $(find "$VERSION_FILE" -mtime +7 -print) ]]; then
+  echo "Fetching latest version data."
+  rm -f "$VERSION_FILE"
+  wget -q -O "$VERSION_FILE" "https://plex.tv/api/downloads/5.json?_=$(date +%s%N | cut -b1-13)"
+else
+  echo "Reusing existing version data."
+fi
+
+PLEX_BINARY_URL=$(jq -r '.nas["Western Digital"]["releases"][]|select(.distro=="wd-mirrorgen2")|.url' "$VERSION_FILE")
+VERSION=$(jq -r '.nas["Western Digital"]["version"]' "$VERSION_FILE")
+PLEX_BINARY="${PREFIX}$(basename $PLEX_BINARY_URL)"
+REPACKAGED_BINARY="${PLEX_BINARY/MirrorGen2/}"
+
+if [ ! -f $PLEX_BINARY ]; then
+  echo "Fetching latest Plex Media Server binary."
+  wget -q -O "$PLEX_BINARY" "$PLEX_BINARY_URL"
+else
+  echo "Reusing existing Plex Media Server binary."
+fi
+
+if [ ! -f $REPACKAGED_BINARY ]; then
+  rm -rf "$PLEX" "${PLEX}.tar.gz"
+  echo "Extracting binary."
+  dd if=$PLEX_BINARY of="${PLEX}.tar.gz" bs=200 skip=1 status=none
+  echo "Extracting code."
+  tar -C "$PREFIX" -xzf "${PLEX}.tar.gz"
+  echo "Repackaging binary."
+  TMP_BINARY="${PREFIX}WDMyCloud_plexmediaserver_${VERSION%%-*}.bin($(date +%m%d%Y))"
+  (cd "${PLEX}" && mkapkg -E -s -m WDMyCloud 1>/dev/null)
+  mv $TMP_BINARY $REPACKAGED_BINARY
+  rm -rf "$PLEX" "${PLEX}.tar.gz"
+  echo "Latest binary repackaged: ${REPACKAGED_BINARY}"
+else
+  echo "Latest repackaged binary: ${REPACKAGED_BINARY}"
+fi
