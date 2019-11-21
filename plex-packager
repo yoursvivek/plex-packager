@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 set -e -o pipefail
 
-PREFIX="/vagrant/build/"
+PREFIX="/vagrant/target/"
+
 PLEX="${PREFIX}plexmediaserver"
 VERSION_FILE="${PREFIX}version.json"
+A_WEEK_AGO=$(date +%s -d '7 days ago')
+RELEASE_PATH='.nas["Western Digital"]["release_date"]'
+VERSION_PATH='.nas["Western Digital"]["version"]'
+BINARY_PATH='.nas["Western Digital"]["releases"][]|select(.distro=="wd-mirrorgen2")|.url'
 
 mkdir -p "$PREFIX"
 
-if [ ! -f $VERSION_FILE ] || [[ $(find "$VERSION_FILE" -mtime +7 -print) ]]; then
+if [ ! -f $VERSION_FILE ] || (( $(jq -r "$RELEASE_PATH" "$VERSION_FILE") <= $A_WEEK_AGO )); then
   echo "Fetching latest version data."
   rm -f "$VERSION_FILE"
   wget -q -O "$VERSION_FILE" "https://plex.tv/api/downloads/5.json?_=$(date +%s%N | cut -b1-13)"
@@ -15,8 +20,8 @@ else
   echo "Reusing existing version data."
 fi
 
-PLEX_BINARY_URL=$(jq -r '.nas["Western Digital"]["releases"][]|select(.distro=="wd-mirrorgen2")|.url' "$VERSION_FILE")
-VERSION=$(jq -r '.nas["Western Digital"]["version"]' "$VERSION_FILE")
+PLEX_BINARY_URL=$(jq -r "$BINARY_PATH" "$VERSION_FILE")
+VERSION=$(jq -r "$VERSION_PATH" "$VERSION_FILE")
 PLEX_BINARY="${PREFIX}$(basename $PLEX_BINARY_URL)"
 REPACKAGED_BINARY="${PLEX_BINARY/MirrorGen2/}"
 
