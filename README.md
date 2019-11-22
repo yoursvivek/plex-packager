@@ -2,7 +2,7 @@
 Plex Packager for WD My Cloud (Gen 2)
 
 ## Pre-requisites and Installation
-Plex Packager uses _Vagrant_ and _Virtual Box_ to repackage Plex Media Server. 
+Plex Packager uses [Vagrant](https://www.vagrantup.com/) and [VirtualBox](https://www.virtualbox.org/) to repackage Plex Media Server.
 
 
 Once you have `vagrant` ready, simply clone this repository.
@@ -24,7 +24,7 @@ vagrant ssh
 plex-packager
 # exit
 exit
-# Your binaries will be found inside `target` directory.
+# Repackaged binary will be found inside `target` directory.
 # Don't forget to halt the VM
 vagrant halt
 ```
